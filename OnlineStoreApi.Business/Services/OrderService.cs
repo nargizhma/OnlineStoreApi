@@ -60,7 +60,7 @@ namespace OnlineStoreApi.Business.Services
             if (product.Stock < dto.Quantity)
                 throw new InvalidOperationException($"Insufficient stock. Available: {product.Stock}, Requested: {dto.Quantity}");
 
-            // Add order detail with product's current price (considering discount)
+            
             var priceAfterDiscount = product.Price * (1 - product.Discount / 100);
             var orderDetail = new OrderDetail
             {
@@ -72,14 +72,14 @@ namespace OnlineStoreApi.Business.Services
 
             order.OrderDetails.Add(orderDetail);
 
-            // Decrease stock
+            
             product.Stock -= dto.Quantity;
 
-            // Update product status if stock reaches 0
+            
             if (product.Stock == 0)
                 product.Status = "tükənib";
 
-            // Recalculate total amount
+            
             order.TotalAmount = order.OrderDetails.Sum(od => od.Price * od.Quantity);
 
             _orderRepository.Update(order);
@@ -100,7 +100,7 @@ namespace OnlineStoreApi.Business.Services
             if (order.Status == "cancelled")
                 throw new InvalidOperationException("Cannot remove items from a cancelled order");
 
-            // Return stock to product
+            
             var product = await _productRepository.GetByIdAsync(orderDetail.ProductId);
             if (product != null)
             {
@@ -110,10 +110,10 @@ namespace OnlineStoreApi.Business.Services
                 _productRepository.Update(product);
             }
 
-            // Remove order detail
+            
             order.OrderDetails.Remove(orderDetail);
 
-            // Recalculate total amount
+            
             order.TotalAmount = order.OrderDetails.Sum(od => od.Price * od.Quantity);
 
             _orderRepository.Update(order);
@@ -130,7 +130,7 @@ namespace OnlineStoreApi.Business.Services
             if (order == null)
                 throw new KeyNotFoundException($"Order with ID {orderId} not found");
 
-            // If changing to cancelled, return stock
+           
             if (dto.Status == "cancelled" && order.Status != "cancelled")
             {
                 foreach (var detail in order.OrderDetails)
@@ -157,7 +157,7 @@ namespace OnlineStoreApi.Business.Services
             if (order == null)
                 throw new KeyNotFoundException($"Order with ID {id} not found");
 
-            // Return stock before deleting
+            
             foreach (var detail in order.OrderDetails)
             {
                 var product = await _productRepository.GetByIdAsync(detail.ProductId);
