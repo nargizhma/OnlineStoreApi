@@ -1,11 +1,14 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OnlineStoreApi.Business.DTOs;
 using OnlineStoreApi.Business.Services;
+using System.Security.Claims;
 
 namespace OnlineStoreApi.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class OrdersController : ControllerBase
     {
         private readonly IOrderService _service;
@@ -15,7 +18,26 @@ namespace OnlineStoreApi.API.Controllers
             _service = service;
         }
 
+        /// <summary>
+        /// Get all orders for the authenticated user
+        /// </summary>
+        [HttpGet("my-orders")]
+        public async Task<ActionResult<IEnumerable<OrderDto>>> GetMyOrders()
+        {
+            try
+            {
+                var userId = GetUserId();
+                var orders = await _service.GetOrdersByUserAsync(userId);
+                return Ok(orders);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<OrderDto>>> GetAll()
         {
             try
@@ -34,12 +56,17 @@ namespace OnlineStoreApi.API.Controllers
         {
             try
             {
-                var order = await _service.GetOrderByIdAsync(id);
+                var userId = GetUserId();
+                var order = await _service.GetOrderByIdAsync(id, userId);
                 return Ok(order);
             }
             catch (KeyNotFoundException ex)
             {
                 return NotFound(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
             }
             catch (Exception ex)
             {
@@ -48,6 +75,7 @@ namespace OnlineStoreApi.API.Controllers
         }
 
         [HttpGet("customer/{customerId}")]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<OrderDto>>> GetByCustomer(int customerId)
         {
             try
@@ -66,7 +94,9 @@ namespace OnlineStoreApi.API.Controllers
         {
             try
             {
-                var order = await _service.CreateOrderAsync(dto);
+                var userId = GetUserId();
+                // Create order for authenticated user instead of using CustomerId from DTO
+                var order = await _service.CreateOrderForUserAsync(userId);
                 return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
             }
             catch (Exception ex)
@@ -80,13 +110,18 @@ namespace OnlineStoreApi.API.Controllers
         {
             try
             {
-                await _service.AddItemToOrderAsync(orderId, dto);
-                var order = await _service.GetOrderByIdAsync(orderId);
+                var userId = GetUserId();
+                await _service.AddItemToOrderAsync(orderId, dto, userId);
+                var order = await _service.GetOrderByIdAsync(orderId, userId);
                 return Ok(order);
             }
             catch (KeyNotFoundException ex)
             {
                 return NotFound(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
             }
             catch (InvalidOperationException ex)
             {
@@ -103,13 +138,18 @@ namespace OnlineStoreApi.API.Controllers
         {
             try
             {
-                await _service.RemoveItemFromOrderAsync(orderId, itemId);
-                var order = await _service.GetOrderByIdAsync(orderId);
+                var userId = GetUserId();
+                await _service.RemoveItemFromOrderAsync(orderId, itemId, userId);
+                var order = await _service.GetOrderByIdAsync(orderId, userId);
                 return Ok(order);
             }
             catch (KeyNotFoundException ex)
             {
                 return NotFound(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
             }
             catch (InvalidOperationException ex)
             {
@@ -126,13 +166,18 @@ namespace OnlineStoreApi.API.Controllers
         {
             try
             {
-                await _service.ChangeOrderStatusAsync(orderId, dto);
-                var order = await _service.GetOrderByIdAsync(orderId);
+                var userId = GetUserId();
+                await _service.ChangeOrderStatusAsync(orderId, dto, userId);
+                var order = await _service.GetOrderByIdAsync(orderId, userId);
                 return Ok(order);
             }
             catch (KeyNotFoundException ex)
             {
                 return NotFound(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
             }
             catch (ArgumentException ex)
             {
@@ -153,17 +198,33 @@ namespace OnlineStoreApi.API.Controllers
         {
             try
             {
-                await _service.DeleteOrderAsync(id);
+                var userId = GetUserId();
+                await _service.DeleteOrderAsync(id, userId);
                 return NoContent();
             }
             catch (KeyNotFoundException ex)
             {
                 return NotFound(ex.Message);
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
+        }
+
+        /// <summary>
+        /// Extract UserId from JWT claims
+        /// </summary>
+        private int GetUserId()
+        {
+            var userIdClaim = User.FindFirst("UserId") ?? User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+                throw new UnauthorizedAccessException("Invalid or missing user ID in token");
+            return userId;
         }
     }
 }

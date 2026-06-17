@@ -9,7 +9,7 @@ namespace OnlineStoreApi.Data.Models
         public int Id { get; set; }
 
         [Required]
-        public DateTime Date { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; }
@@ -18,8 +18,14 @@ namespace OnlineStoreApi.Data.Models
         [MaxLength(20)]
         public string Status { get; set; } = "pending"; // pending, confirmed, cancelled, delivered
 
+        [ForeignKey("User")]
+        public int UserId { get; set; }
+
+        public User User { get; set; }
+
+        // Backward compatibility with existing Customer model
         [ForeignKey("Customer")]
-        public int CustomerId { get; set; }
+        public int? CustomerId { get; set; }
 
         public Customer Customer { get; set; }
 

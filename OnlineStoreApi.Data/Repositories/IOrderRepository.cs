@@ -5,5 +5,6 @@ namespace OnlineStoreApi.Data.Repositories
     public interface IOrderRepository : IRepository<Order>
     {
         Task<IEnumerable<Order>> GetByCustomerAsync(int customerId);
+        Task<IEnumerable<Order>> GetByUserAsync(int userId);
     }
 }
