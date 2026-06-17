@@ -9,8 +9,7 @@ namespace OnlineStoreApi.Data.Repositories
 
         public override async Task<Order> GetByIdAsync(int id)
         {
-            return await _dbSet.Include(o => o.User)
-                .Include(o => o.Customer)
+            return await _dbSet.Include(o => o.Customer)
                 .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.Product)
                 .FirstOrDefaultAsync(o => o.Id == id);
@@ -18,8 +17,7 @@ namespace OnlineStoreApi.Data.Repositories
 
         public override async Task<IEnumerable<Order>> GetAllAsync()
         {
-            return await _dbSet.Include(o => o.User)
-                .Include(o => o.Customer)
+            return await _dbSet.Include(o => o.Customer)
                 .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.Product)
                 .ToListAsync();
@@ -28,17 +26,7 @@ namespace OnlineStoreApi.Data.Repositories
         public async Task<IEnumerable<Order>> GetByCustomerAsync(int customerId)
         {
             return await _dbSet.Where(o => o.CustomerId == customerId)
-                .Include(o => o.User)
                 .Include(o => o.Customer)
-                .Include(o => o.OrderDetails)
-                .ThenInclude(od => od.Product)
-                .ToListAsync();
-        }
-
-        public async Task<IEnumerable<Order>> GetByUserAsync(int userId)
-        {
-            return await _dbSet.Where(o => o.UserId == userId)
-                .Include(o => o.User)
                 .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.Product)
                 .ToListAsync();

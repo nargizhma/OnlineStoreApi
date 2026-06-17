@@ -10,10 +10,10 @@ namespace OnlineStoreApi.Business.Mappers
             return new OrderDto
             {
                 Id = order.Id,
-                Date = order.CreatedAt,
+                Date = order.Date,
                 TotalAmount = order.TotalAmount,
                 Status = order.Status,
-                CustomerId = order.CustomerId ?? 0,
+                CustomerId = order.CustomerId,
                 CustomerName = order.Customer?.Name,
                 OrderDetails = order.OrderDetails?.Select(od => od.ToDto()).ToList() ?? new List<OrderDetailDto>()
             };
@@ -37,7 +37,7 @@ namespace OnlineStoreApi.Business.Mappers
             {
                 CustomerId = dto.CustomerId,
                 Status = "pending",
-                CreatedAt = DateTime.UtcNow,
+                Date = DateTime.UtcNow,
                 TotalAmount = 0
             };
         }

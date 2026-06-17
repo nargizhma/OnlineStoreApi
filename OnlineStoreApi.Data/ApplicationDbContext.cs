@@ -9,7 +9,6 @@ namespace OnlineStoreApi.Data
 
         public DbSet<ProductCategory> ProductCategories { get; set; }
         public DbSet<Product> Products { get; set; }
-        public DbSet<User> Users { get; set; }
         public DbSet<Customer> Customers { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderDetail> OrderDetails { get; set; }
@@ -25,20 +24,12 @@ namespace OnlineStoreApi.Data
                 .HasForeignKey(p => p.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Order -> User relationship
-            modelBuilder.Entity<Order>()
-                .HasOne(o => o.User)
-                .WithMany(u => u.Orders)
-                .HasForeignKey(o => o.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Order -> Customer relationship (keep for backward compatibility)
+            // Order -> Customer relationship
             modelBuilder.Entity<Order>()
                 .HasOne(o => o.Customer)
                 .WithMany(c => c.Orders)
                 .HasForeignKey(o => o.CustomerId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired(false);
+                .OnDelete(DeleteBehavior.Cascade);
 
             // OrderDetail -> Order relationship
             modelBuilder.Entity<OrderDetail>()
@@ -59,9 +50,6 @@ namespace OnlineStoreApi.Data
                 .HasIndex(p => p.CategoryId);
 
             modelBuilder.Entity<Order>()
-                .HasIndex(o => o.UserId);
-
-            modelBuilder.Entity<Order>()
                 .HasIndex(o => o.CustomerId);
 
             modelBuilder.Entity<OrderDetail>()
@@ -69,10 +57,6 @@ namespace OnlineStoreApi.Data
 
             modelBuilder.Entity<OrderDetail>()
                 .HasIndex(od => od.ProductId);
-
-            modelBuilder.Entity<User>()
-                .HasIndex(u => u.Email)
-                .IsUnique();
         }
     }
 }
